@@ -1,0 +1,12 @@
+// Object Reference Graph
+digraph {
+	List [label="List
+list"]
+	Dict [label="Dict
+dict"]
+	List -> Dict
+	Tuple [label="Tuple
+tuple"]
+	List -> Tuple
+	Dict -> Tuple
+}

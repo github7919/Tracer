@@ -1,0 +1,91 @@
+import ast
+
+def print_ast(source_code: str):
+    def pretty_print(node, indent="", last=True, vars_in_scope=None):
+        if vars_in_scope is None:
+            vars_in_scope = set()
+
+        def is_last_child(index, iterable):
+            return index == len(iterable) - 1
+
+        prefix = "└─" if last else "├─"
+        next_indent = indent + ("   " if last else "│  ")
+
+        if isinstance(node, ast.FunctionDef):
+            print(f"{indent}{prefix}function : {node.name}")
+            for i, arg in enumerate(node.args.args):
+                print(f"{next_indent}├─█─{arg.arg}")
+                vars_in_scope.add(arg.arg)
+            print(f"{next_indent}└─█─`{{`")
+            for i, stmt in enumerate(node.body):
+                pretty_print(stmt, next_indent + "   ", is_last_child(i, node.body), vars_in_scope)
+            print(f"{next_indent}└─`}}`")  # Closing the function block
+        elif isinstance(node, ast.Return):
+            print(f"{indent}{prefix}return")
+            pretty_print(node.value, next_indent, last=True, vars_in_scope=vars_in_scope)
+        elif isinstance(node, ast.If):
+            print(f"{indent}{prefix}if")
+            print(f"{next_indent}├─`(`")
+            pretty_print(node.test, next_indent + "   ", last=True, vars_in_scope=vars_in_scope)
+            print(f"{next_indent}├─`{{`")  # 'body' section
+            for i, stmt in enumerate(node.body):
+                pretty_print(stmt, next_indent + "   ", is_last_child(i, node.body), vars_in_scope)
+            print(f"{next_indent}└─`}}`")  # Closing the if body
+            if node.orelse:
+                print(f"{next_indent}├─else")
+                print(f"{next_indent}└─`{{`")  # 'orelse' section
+                for i, stmt in enumerate(node.orelse):
+                    pretty_print(stmt, next_indent + "   ", is_last_child(i, node.orelse), vars_in_scope)
+                print(f"{next_indent}└─`}}`")  # Closing the else body
+        elif isinstance(node, ast.Compare):
+            op_str = type(node.ops[0]).__name__
+            print(f"{indent}{prefix}{op_str}")
+            pretty_print(node.left, next_indent, last=False, vars_in_scope=vars_in_scope)
+            for i, comp in enumerate(node.comparators):
+                pretty_print(comp, next_indent, last=is_last_child(i, node.comparators), vars_in_scope=vars_in_scope)
+        elif isinstance(node, ast.BinOp):
+            op_type = type(node.op)
+            op_str = {
+                ast.Add: "+", ast.Sub: "-", ast.Mult: "*", ast.Div: "/", ast.Mod: "%",
+                ast.Pow: "**", ast.FloorDiv: "//"
+            }.get(op_type, op_type.__name__)
+            print(f"{indent}{prefix}{op_str}")
+            pretty_print(node.left, next_indent, last=False, vars_in_scope=vars_in_scope)
+            pretty_print(node.right, next_indent, last=True, vars_in_scope=vars_in_scope)
+        elif isinstance(node, ast.Expr):
+            pretty_print(node.value, indent, last, vars_in_scope=vars_in_scope)
+        elif isinstance(node, ast.Call):
+            func_name = getattr(node.func, 'id', str(node.func))  # Handling for anonymous functions or more complex call expressions
+            print(f"{indent}{prefix}{func_name}")
+            for i, arg in enumerate(node.args):
+                pretty_print(arg, next_indent, last=is_last_child(i, node.args), vars_in_scope=vars_in_scope)
+        elif isinstance(node, ast.Name):
+            if node.id in vars_in_scope:
+                print(f"{indent}{prefix}{node.id}")
+            else:
+                print(f"{indent}{prefix}[undefined variable: {node.id}]")
+        elif isinstance(node, ast.Constant):
+            print(f"{indent}{prefix}{repr(node.value)}")
+        elif isinstance(node, ast.ListComp):
+            print(f"{indent}{prefix}List comprehension:")
+            pretty_print(node.elt, next_indent, last=False, vars_in_scope=vars_in_scope)
+            for generator in node.generators:
+                pretty_print(generator, next_indent, last=True, vars_in_scope=vars_in_scope)
+        elif isinstance(node, ast.comprehension):
+            print(f"{indent}{prefix}for {node.target.id} in")
+            pretty_print(node.iter, next_indent + "   ", last=False, vars_in_scope=vars_in_scope)
+            if node.ifs:
+                print(f"{next_indent}   ├─if")
+                for i, if_node in enumerate(node.ifs):
+                    pretty_print(if_node, next_indent + "   ", last=is_last_child(i, node.ifs), vars_in_scope=vars_in_scope)
+        elif isinstance(node, ast.Module):
+            for i, stmt in enumerate(node.body):
+                pretty_print(stmt, indent, is_last_child(i, node.body), vars_in_scope)
+        else:
+            print(f"{indent}{prefix}Unsupported node type: {type(node).__name__}")
+
+    try:
+        tree = ast.parse(source_code)
+        pretty_print(tree)
+    except SyntaxError as e:
+        print(f"Syntax error in the provided code: {e}")

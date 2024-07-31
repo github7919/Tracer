@@ -1,0 +1,48 @@
+# Bytecode files
+__pycache__/
+*.py[cod]
+
+# Package directories
+dist/
+build/
+*.egg-info/
+
+# Virtual environment
+venv/
+env/
+.virtualenv/
+
+# Operating system files
+.DS_Store    # macOS desktop services store
+Thumbs.db    # Windows thumbnail cache
+desktop.ini  # Windows folders configuration
+
+# IDE/Editor directories
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+
+# Environment variables and configuration files
+.env
+config.py
+
+# Log files and databases
+*.log
+*.sqlite
+*.db
+
+# Testing files
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Dependencies
+requirements.txt
+
+# User-specific files (if any)
+# user_specific/
+
